@@ -2,7 +2,19 @@
 import { GoogleGenAI } from "@google/genai";
 import { ProductData, SimulationConfig, FrameOption } from "./types";
 
-const fallbackSimulation = (product: ProductData, config: SimulationConfig): Promise<string> => {
+interface AIAnalysis {
+    wallAvailable: boolean;
+    wallCenter: { x: number, y: number }; // 0-1 coordinates
+    scaleEstimate: number; // 0-1 width relative to image width
+    lightingQuality: 'low' | 'medium' | 'high';
+    shadowDirection: 'left' | 'right' | 'top' | 'none';
+}
+
+const renderCanvas = (
+    product: ProductData,
+    config: SimulationConfig,
+    analysis?: AIAnalysis
+): Promise<string> => {
     return new Promise((resolve, reject) => {
         const img = new Image();
         img.crossOrigin = "anonymous";
@@ -20,31 +32,46 @@ const fallbackSimulation = (product: ProductData, config: SimulationConfig): Pro
             // Draw Room
             ctx.drawImage(img, 0, 0);
 
-            // Mock placement logic (Center of image)
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2.2;
+            // Determine Position (AI or Default)
+            let centerX = canvas.width / 2;
+            let centerY = canvas.height / 2.2;
+            let frameWidthRatio = 0.3; // Default 30% width
 
-            // Approximate scale
-            let scaleFactor = 0.3;
-            if (config.size.includes('175')) scaleFactor = 0.5;
-            else if (config.size.includes('145')) scaleFactor = 0.45;
-            else if (config.size.includes('115')) scaleFactor = 0.4;
-            else if (config.size.includes('85')) scaleFactor = 0.35;
-            else if (config.size.includes('55')) scaleFactor = 0.25;
-            else if (config.size.includes('40')) scaleFactor = 0.2;
+            if (analysis && analysis.wallAvailable) {
+                // Use AI suggestions with sanity checks
+                if (analysis.wallCenter.x > 0.1 && analysis.wallCenter.x < 0.9) {
+                    centerX = canvas.width * analysis.wallCenter.x;
+                }
+                if (analysis.wallCenter.y > 0.1 && analysis.wallCenter.y < 0.9) {
+                    centerY = canvas.height * analysis.wallCenter.y;
+                }
+                if (analysis.scaleEstimate > 0.1 && analysis.scaleEstimate < 0.9) {
+                    // Blend AI estimate with config size hint
+                    frameWidthRatio = analysis.scaleEstimate;
+                }
+            }
 
-            const frameWidth = canvas.width * scaleFactor;
+            // Adjust scale based on user selection config (refining AI guess)
+            if (config.size.includes('175')) frameWidthRatio = Math.max(frameWidthRatio, 0.45);
+            else if (config.size.includes('55')) frameWidthRatio = Math.min(frameWidthRatio, 0.25);
+
+            const frameWidth = canvas.width * frameWidthRatio;
             const frameHeight = frameWidth * (config.size.includes('40x20') ? 0.5 :
                 config.size.includes('x' + frameWidth) ? 1.5 : 1.4);
 
             const x = centerX - frameWidth / 2;
             const y = centerY - frameHeight / 2;
 
-            // Simple Shadow
-            ctx.shadowColor = "rgba(0,0,0,0.5)";
-            ctx.shadowBlur = 30;
-            ctx.shadowOffsetX = 10;
-            ctx.shadowOffsetY = 20;
+            // Draw Shadow (AI Direction)
+            ctx.shadowColor = "rgba(0,0,0,0.6)";
+            ctx.shadowBlur = 40;
+            let sX = 15, sY = 25;
+
+            if (analysis?.shadowDirection === 'left') sX = -15;
+            if (analysis?.shadowDirection === 'top') sY = -15;
+
+            ctx.shadowOffsetX = sX;
+            ctx.shadowOffsetY = sY;
 
             // Draw Frame
             const selectedFrame = product.frameOptions.find(f => f.frameId === config.selectedFrameId);
@@ -66,13 +93,23 @@ const fallbackSimulation = (product: ProductData, config: SimulationConfig): Pro
                 ctx.shadowColor = "transparent";
                 ctx.drawImage(artImg, x + border, y + border, frameWidth - (border * 2), frameHeight - (border * 2));
 
+                // Glass Effect
                 if (config.glass) {
                     const gradient = ctx.createLinearGradient(x, y, x + frameWidth, y + frameHeight);
-                    gradient.addColorStop(0, "rgba(255,255,255,0.1)");
-                    gradient.addColorStop(0.5, "rgba(255,255,255,0)");
-                    gradient.addColorStop(1, "rgba(255,255,255,0.05)");
+                    gradient.addColorStop(0, "rgba(255,255,255,0.15)");
+                    gradient.addColorStop(0.4, "rgba(255,255,255,0)");
+                    gradient.addColorStop(0.6, "rgba(255,255,255,0)");
+                    gradient.addColorStop(1, "rgba(255,255,255,0.1)");
                     ctx.fillStyle = gradient;
                     ctx.fillRect(x + border, y + border, frameWidth - (border * 2), frameHeight - (border * 2));
+                }
+
+                // Add Nano Banana Watermark (if AI was used)
+                if (analysis) {
+                    ctx.font = "bold 12px sans-serif";
+                    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+                    ctx.textAlign = "right";
+                    ctx.fillText("✨ Enhanced by Nano Banana AI", canvas.width - 20, canvas.height - 20);
                 }
 
                 resolve(canvas.toDataURL('image/jpeg', 0.9));
@@ -92,15 +129,18 @@ export const generateSimulation = async (
     product: ProductData,
     config: SimulationConfig
 ): Promise<string> => {
-    try {
-        const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
-        // Even if API key is missing, we can use fallback. 
-        // We throw to trigger catch block for seamless fallback.
-        if (!apiKey) throw new Error("API Key missing (using fallback)");
 
+    // 1. Check Key
+    const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
+    if (!apiKey) {
+        console.warn("API Key missing. Using standard layout engine.");
+        return renderCanvas(product, config);
+    }
+
+    try {
         const ai = new GoogleGenAI({ apiKey });
 
-        // Prepare parts
+        // 2. Prepare for Analysis
         const roomPart = {
             inlineData: {
                 mimeType: "image/jpeg",
@@ -108,30 +148,45 @@ export const generateSimulation = async (
             },
         };
 
-        const selectedFrame = product.frameOptions.find(f => f.frameId === config.selectedFrameId);
-
-        // This prompt helps ONLY if we had an image generation model.
-        // Since we are likely restricted to 1.5-Flash (text only), we will intentionally likely fail to parse image.
-        // But we keep the structure in case a model becomes available.
-        const prompt = `Task: Describe placement of frame ${selectedFrame?.frameName} in this room.`;
+        // 3. Ask Nano Banana for Coordinates (JSON)
+        // We use gemini-1.5-flash which is fast and supports JSON schema often (or loose JSON).
+        const prompt = `
+            You are Nano Banana, an expert interior design AI. 
+            Analyze this room image to place a wall art frame.
+            
+            Return ONLY a valid JSON object with this exact structure:
+            {
+                "wallAvailable": boolean, // Is there a good empty wall space?
+                "wallCenter": { "x": number, "y": number }, // 0.0 to 1.0 coordinates of the best center point for the art
+                "scaleEstimate": number, // 0.1 to 0.8 estimate of how wide the frame should be relative to image width
+                "shadowDirection": "left" | "right" | "top" | "none" // estimated light direction
+            }
+            Do not include markdown formatting. Just the JSON.
+        `;
 
         const response = await ai.models.generateContent({
             model: "gemini-1.5-flash",
             contents: { parts: [roomPart, { text: prompt }] }
         });
 
-        // Check for inlineData (Images). 1.5-Flash won't return this usually.
-        for (const part of response.candidates?.[0]?.content?.parts || []) {
-            if (part.inlineData) {
-                return `data:image/png;base64,${part.inlineData.data}`;
-            }
+        const text = response.response.text();
+        console.log("Nano Banana Analysis:", text);
+
+        // 4. Parse JSON
+        let analysis: AIAnalysis | undefined;
+        try {
+            // Clean up markdown if present
+            const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+            analysis = JSON.parse(jsonStr);
+        } catch (e) {
+            console.warn("Failed to parse Nano Banana JSON, using standard engine.", e);
         }
 
-        // If we got here, no image was generated. Throw to use fallback.
-        throw new Error("No image generated by AI model");
+        // 5. Render with AI Data
+        return renderCanvas(product, config, analysis);
 
     } catch (error) {
-        console.warn("Nano Banana AI unavailable, switching to local simulation engine:", error);
-        return fallbackSimulation(product, config);
+        console.error("Nano Banana AI failed (network/quota), switching to standard engine:", error);
+        return renderCanvas(product, config);
     }
 };
