@@ -8,16 +8,35 @@ interface UploadScreenProps {
 export const UploadScreen: React.FC<UploadScreenProps> = ({ onImageSelect }) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      let fileToProcess = file;
+
+      // Handle HEIC/HEIF
+      if (file.type === "image/heic" || file.type === "image/heif" || file.name.toLowerCase().endsWith('.heic')) {
+        try {
+          const heic2any = (await import('heic2any')).default;
+          const convertedBlob = await heic2any({
+            blob: file,
+            toType: "image/jpeg",
+            quality: 0.8
+          });
+          fileToProcess = Array.isArray(convertedBlob) ? convertedBlob[0] : convertedBlob;
+        } catch (error) {
+          console.error("HEIC conversion failed:", error);
+          alert("Não foi possível converter a imagem HEIC. Tente usar JPG ou PNG.");
+          return;
+        }
+      }
+
       const reader = new FileReader();
       reader.onload = (ev) => {
         if (ev.target?.result) {
           onImageSelect(ev.target.result as string);
         }
       };
-      reader.readAsDataURL(file);
+      reader.readAsDataURL(fileToProcess);
     }
   };
 
@@ -53,7 +72,7 @@ export const UploadScreen: React.FC<UploadScreenProps> = ({ onImageSelect }) => 
         <input
           ref={fileInputRef}
           type="file"
-          accept="image/*"
+          accept="image/*,.heic,.heif"
           className="hidden"
           onChange={handleFileChange}
         />
