@@ -89,30 +89,35 @@ const renderCanvas = (
             const artImg = new Image();
             artImg.crossOrigin = "anonymous";
             artImg.onload = () => {
-                const border = isFloating ? 0 : frameWidth * 0.05;
-                ctx.shadowColor = "transparent";
-                ctx.drawImage(artImg, x + border, y + border, frameWidth - (border * 2), frameHeight - (border * 2));
+                try {
+                    const border = isFloating ? 0 : frameWidth * 0.05;
+                    ctx.shadowColor = "transparent";
+                    ctx.drawImage(artImg, x + border, y + border, frameWidth - (border * 2), frameHeight - (border * 2));
 
-                // Glass Effect
-                if (config.glass) {
-                    const gradient = ctx.createLinearGradient(x, y, x + frameWidth, y + frameHeight);
-                    gradient.addColorStop(0, "rgba(255,255,255,0.15)");
-                    gradient.addColorStop(0.4, "rgba(255,255,255,0)");
-                    gradient.addColorStop(0.6, "rgba(255,255,255,0)");
-                    gradient.addColorStop(1, "rgba(255,255,255,0.1)");
-                    ctx.fillStyle = gradient;
-                    ctx.fillRect(x + border, y + border, frameWidth - (border * 2), frameHeight - (border * 2));
+                    // Glass Effect
+                    if (config.glass) {
+                        const gradient = ctx.createLinearGradient(x, y, x + frameWidth, y + frameHeight);
+                        gradient.addColorStop(0, "rgba(255,255,255,0.15)");
+                        gradient.addColorStop(0.4, "rgba(255,255,255,0)");
+                        gradient.addColorStop(0.6, "rgba(255,255,255,0)");
+                        gradient.addColorStop(1, "rgba(255,255,255,0.1)");
+                        ctx.fillStyle = gradient;
+                        ctx.fillRect(x + border, y + border, frameWidth - (border * 2), frameHeight - (border * 2));
+                    }
+
+                    // Add Nano Banana Watermark (if AI was used)
+                    if (analysis) {
+                        ctx.font = "bold 12px sans-serif";
+                        ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
+                        ctx.textAlign = "right";
+                        ctx.fillText("✨ Enhanced by Nano Banana AI", canvas.width - 20, canvas.height - 20);
+                    }
+
+                    resolve(canvas.toDataURL('image/jpeg', 0.9));
+                } catch (e) {
+                    console.error("Canvas export failed (likely CORS):", e);
+                    resolve(config.roomImage!);
                 }
-
-                // Add Nano Banana Watermark (if AI was used)
-                if (analysis) {
-                    ctx.font = "bold 12px sans-serif";
-                    ctx.fillStyle = "rgba(255, 255, 255, 0.5)";
-                    ctx.textAlign = "right";
-                    ctx.fillText("✨ Enhanced by Nano Banana AI", canvas.width - 20, canvas.height - 20);
-                }
-
-                resolve(canvas.toDataURL('image/jpeg', 0.9));
             };
             artImg.onerror = () => {
                 // Fallback if art fails
@@ -169,7 +174,7 @@ export const generateSimulation = async (
             contents: { parts: [roomPart, { text: prompt }] }
         });
 
-        const text = response.response.text();
+        const text = response.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
         console.log("Nano Banana Analysis:", text);
 
         // 4. Parse JSON
