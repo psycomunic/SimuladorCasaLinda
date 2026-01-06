@@ -229,15 +229,21 @@ const callNanoBananaInpainting = async (compositeBase64: string, maskBase64: str
     console.log("Negative Prompt:", "deformed, blurry, floating objects, cartoon, text, watermark, bad perspective.");
     console.log("Denoising Strength:", 0.35);
 
-    // Simulate API Unavailable / Error 500 handling
+    // Simulate API Unavailable / Error 500 handling -> NOW ACTIVATED FALLBACK
+    // Since we are in "Placeholder Mode", we consider the Composite as the successful result.
+    console.log("%c 🍌 Nano Banana Inpainting: RETURNING COMPOSITE (Architecture Ready)", "color: lightgreen; font-weight: bold; background: black;");
+
+    // In the future, uncomment this to enable real endpoint:
+    /*
     try {
-        // Mocking an error because we don't have the endpoint yet
-        throw new Error("Nano Banana API Endpoint not configured (500)");
+        // const response = await fetch(...)
+        // return response.json().image
     } catch (e) {
-        console.error("Nano Banana API Error:", e);
-        // Step 4: Fallback to Composite
         return compositeBase64;
     }
+    */
+
+    return compositeBase64;
 };
 
 
@@ -251,8 +257,15 @@ export const generateSimulation = async (
     let analysis: AIAnalysis | undefined;
     const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
 
+    console.log(`%c 🍌 Nano Banana AI Check: ${apiKey ? "KEY FOUND" : "NO KEY"}`, "color: yellow; font-weight: bold; background: black; padding: 4px;");
+
+    if (config.manualPosition) {
+        console.log("%c 👆 Manual Position Active - Skipping AI Analysis", "color: orange");
+    }
+
     if (apiKey && !config.manualPosition && config.roomImage) {
         try {
+            console.log("Analyzing Room with Gemini 1.5 Flash...");
             const ai = new GoogleGenAI({ apiKey });
             const roomPart = { inlineData: { mimeType: "image/jpeg", data: config.roomImage.split(',')[1] } };
             const prompt = `
@@ -263,9 +276,16 @@ export const generateSimulation = async (
             `;
             const resp = await ai.models.generateContent({ model: "gemini-1.5-flash", contents: { parts: [roomPart, { text: prompt }] } });
             const text = resp.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
+            console.log("Nano Banana Analysis Raw:", text);
+
             const start = text.indexOf('{'), end = text.lastIndexOf('}') + 1;
-            if (start !== -1) analysis = JSON.parse(text.substring(start, end));
-        } catch (e) { console.warn("AI Analysis failed, ignoring.", e); }
+            if (start !== -1) {
+                analysis = JSON.parse(text.substring(start, end));
+                console.log("✅ Analysis Success:", analysis);
+            }
+        } catch (e) {
+            console.warn("AI Analysis failed, using Default placement.", e);
+        }
     }
 
     // 1. Create Composite (Input Image)
