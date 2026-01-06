@@ -106,13 +106,38 @@ function calculateGeometry(cw: number, ch: number, config: SimulationConfig, ana
     if (config.size.includes('175')) frameWidthRatio = Math.max(frameWidthRatio, 0.45);
     else if (config.size.includes('55')) frameWidthRatio = Math.min(frameWidthRatio, 0.25);
 
-    const width = cw * frameWidthRatio;
-    const height = width * (config.size.includes('40x20') ? 0.5 :
+    let width = cw * frameWidthRatio;
+    let height = width * (config.size.includes('40x20') ? 0.5 :
         config.size.includes('x' + width) ? 1.5 : 1.4);
 
+    // --- SMART FIT: Boundary Constraints (Prevent Clipping) ---
+    // 1. Force Scale Down if larger than canvas
+    if (width > cw) {
+        const scaleFactor = (cw * 0.9) / width;
+        width *= scaleFactor;
+        height *= scaleFactor;
+    }
+    if (height > ch) {
+        const scaleFactor = (ch * 0.9) / height;
+        width *= scaleFactor;
+        height *= scaleFactor;
+    }
+
+    let finalX = centerX - width / 2;
+    let finalY = centerY - height / 2;
+
+    // 2. Clamp Positions (Push inside if touching edges)
+    // Left/Right
+    if (finalX < 0) finalX = 0;
+    if (finalX + width > cw) finalX = cw - width;
+
+    // Top/Bottom
+    if (finalY < 0) finalY = 0;
+    if (finalY + height > ch) finalY = ch - height;
+
     return {
-        x: centerX - width / 2,
-        y: centerY - height / 2,
+        x: finalX,
+        y: finalY,
         width,
         height
     };
