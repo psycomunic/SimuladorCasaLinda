@@ -181,18 +181,53 @@ const App: React.FC = () => {
           </div>
 
           <div className="space-y-12">
+
+
             <section>
-              <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-accent mb-5 block">Posicionamento Ideal</label>
-              <div className="flex gap-3 overflow-x-auto hide-scrollbar pb-2">
-                {['Centro', 'Sobre o Sofá', 'Aparador', 'Cabeceira'].map(p => (
-                  <button
-                    key={p}
-                    onClick={() => setConfig({ ...config, placement: p })}
-                    className={`px-8 py-3 rounded-full border text-[11px] font-bold uppercase tracking-wider transition-all duration-300 ${config.placement === p ? 'bg-charcoal text-white border-charcoal shadow-xl' : 'bg-white border-border-soft text-charcoal/50'}`}
+              <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-accent mb-5 block">
+                Toque onde quer o quadro
+              </label>
+
+              <div
+                className="relative w-full aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden shadow-inner cursor-crosshair touch-none"
+                onClick={(e) => {
+                  const rect = e.currentTarget.getBoundingClientRect();
+                  const x = (e.clientX - rect.left) / rect.width;
+                  const y = (e.clientY - rect.top) / rect.height;
+                  setConfig({ ...config, manualPosition: { x, y } });
+                }}
+              >
+                {config.roomImage && (
+                  <img
+                    src={config.roomImage}
+                    alt="Sala"
+                    className="w-full h-full object-cover pointer-events-none"
+                  />
+                )}
+
+                {/* Marker */}
+                {config.manualPosition && (
+                  <div
+                    className="absolute w-6 h-6 border-2 border-white bg-mustard/80 rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-lg animate-bounce"
+                    style={{
+                      left: `${config.manualPosition.x * 100}%`,
+                      top: `${config.manualPosition.y * 100}%`
+                    }}
                   >
-                    {p}
-                  </button>
-                ))}
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="w-1 h-1 bg-charcoal rounded-full"></div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Initial Hint if no position selected */}
+                {!config.manualPosition && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/10">
+                    <span className="bg-white/90 px-3 py-1 rounded-full text-[10px] font-bold text-charcoal shadow-sm">
+                      Toque na parede
+                    </span>
+                  </div>
+                )}
               </div>
             </section>
 

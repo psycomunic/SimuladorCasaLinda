@@ -46,6 +46,7 @@ export interface SimulationConfig {
   lighting: string;
   // Added glass property used in modular screens
   glass?: boolean;
+  manualPosition?: { x: number, y: number }; // 0-1 relative coordinates
   frameCategory?: 'caixa' | 'premium' | 'none';
 }
 
