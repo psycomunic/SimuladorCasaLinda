@@ -1,4 +1,4 @@
-import { GoogleGenAI } from "@google/genai";
+// GoogleGenAI removed - using Backend
 import { ProductData, SimulationConfig } from "./types";
 
 interface AIAnalysis {
@@ -285,36 +285,41 @@ export const generateSimulation = async (
 
     // 0. AI Analysis (Coordinates & Lighting) - Helper for Step 1
     let analysis: AIAnalysis | undefined;
-    const apiKey = import.meta.env.VITE_GOOGLE_API_KEY;
 
-    console.log(`%c 🍌 Nano Banana AI Check: ${apiKey ? "KEY FOUND" : "NO KEY"}`, "color: yellow; font-weight: bold; background: black; padding: 4px;");
+    // BACKEND INTEGRATION: No more client-side API Keys!
+    console.log(`%c 🍌 Nano Banana Backend: CONNECTING...`, "color: yellow; font-weight: bold; background: black; padding: 4px;");
 
     if (config.manualPosition) {
         console.log("%c 👆 Manual Position Active - Skipping AI Analysis", "color: orange");
     }
 
-    if (apiKey && !config.manualPosition && config.roomImage) {
+    if (!config.manualPosition && config.roomImage) {
         try {
-            console.log("Analyzing Room with Gemini 1.5 Flash...");
-            const ai = new GoogleGenAI({ apiKey });
-            const roomPart = { inlineData: { mimeType: "image/jpeg", data: config.roomImage.split(',')[1] } };
-            const prompt = `
-                Analyze room for wall art placement. Return JSON:
-                { "wallAvailable": boolean, "wallCenter": { "x": number, "y": number }, 
-                  "scaleEstimate": number, "shadowDirection": "left"|"right"|"top"|"none",
-                  "ambientHexColor": string, "brightness": number }
-            `;
-            const resp = await ai.models.generateContent({ model: "gemini-1.5-flash", contents: { parts: [roomPart, { text: prompt }] } });
-            const text = resp.candidates?.[0]?.content?.parts?.[0]?.text || "{}";
-            console.log("Nano Banana Analysis Raw:", text);
+            console.log("Requesting Analysis from http://localhost:3001...");
 
-            const start = text.indexOf('{'), end = text.lastIndexOf('}') + 1;
-            if (start !== -1) {
-                analysis = JSON.parse(text.substring(start, end));
-                console.log("✅ Analysis Success:", analysis);
+            const response = await fetch('http://localhost:3001/api/nanobanana/generate', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ roomImage: config.roomImage })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Server Error: ${response.status} ${response.statusText}`);
             }
+
+            const data = await response.json();
+            console.log("✅ Backend Analysis Success:", data);
+
+            // Validate response/fallback
+            if (data && typeof data.wallAvailable === 'boolean') {
+                analysis = data;
+            }
+
         } catch (e) {
-            console.warn("AI Analysis failed, using Default placement.", e);
+            console.warn("⚠️ Nano Banana Backend Failed (Is 'npm run server' running?):", e);
+            console.log("%c Switching to Local Fallback (Center)", "color: orange");
         }
     }
 
