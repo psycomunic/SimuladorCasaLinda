@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link
-        href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600&family=Outfit:wght@300;400;500;600&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Outfit:wght@300;400;500;600&display=swap"
         rel="stylesheet">
     <link
         href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
@@ -19,17 +19,23 @@
             theme: {
                 extend: {
                     colors: {
-                        'off-white': '#FDFCFB',
-                        'charcoal': '#1A1A1A',
+                        'off-white': '#FAFAFA',
+                        'charcoal': '#121212',
+                        'charcoal-soft': '#2A2A2A',
                         'gold-accent': '#C5A059',
-                        'luxury-gray': '#E5E5E5',
-                        'border-soft': '#EEEEEE',
-                        'mustard': '#E4B61A',
+                        'champagne': '#E8DFC5',
+                        'luxury-gray': '#F5F5F5',
+                        'border-soft': '#E0E0E0',
+                        'mustard': '#D4AF37', // Updated to Metallic Gold
                         'whatsapp': '#25D366'
                     },
                     fontFamily: {
-                        serif: ['Cormorant Garamond', 'serif'],
+                        serif: ['Playfair Display', 'serif'],
                         sans: ['Outfit', 'sans-serif'],
+                    },
+                    boxShadow: {
+                        'luxury': '0 10px 30px -10px rgba(0, 0, 0, 0.1)',
+                        'inner-luxury': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
                     }
                 }
             }
@@ -37,24 +43,30 @@
     </script>
     <style>
         body {
-            background-color: #FDFCFB;
-            color: #1A1A1A;
+            background-color: #FAFAFA;
+            color: #121212;
             -webkit-tap-highlight-color: transparent;
+            background-image:
+                radial-gradient(at 100% 0%, rgba(197, 160, 89, 0.03) 0px, transparent 50%),
+                radial-gradient(at 0% 100%, rgba(212, 175, 55, 0.03) 0px, transparent 50%);
+            background-attachment: fixed;
         }
 
         .fade-in {
-            animation: fadeIn 0.4s ease-out forwards;
+            animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         @keyframes fadeIn {
             from {
                 opacity: 0;
-                transform: translateY(10px);
+                transform: translateY(20px);
+                filter: blur(4px);
             }
 
             to {
                 opacity: 1;
                 transform: translateY(0);
+                filter: blur(0);
             }
         }
 
@@ -63,17 +75,25 @@
         }
 
         .btn-luxury {
-            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            letter-spacing: 0.15em;
+        }
+
+        .btn-luxury:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px -10px rgba(0, 0, 0, 0.15);
         }
 
         .btn-luxury:active {
-            transform: scale(0.97);
+            transform: scale(0.98);
             opacity: 0.9;
         }
 
         .glass {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(8px);
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-top: 1px solid rgba(255, 255, 255, 0.5);
         }
     </style>
     <script type="importmap">

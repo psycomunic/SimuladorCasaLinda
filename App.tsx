@@ -114,7 +114,7 @@ const App: React.FC = () => {
   const stepIndex = ['loading', 'room', 'size', 'frame-category', 'frame', 'adjust', 'generating', 'result'].indexOf(step);
 
   return (
-    <div className="flex flex-col min-h-screen bg-off-white text-charcoal max-w-md mx-auto w-full shadow-2xl relative overflow-x-hidden">
+    <div className="flex flex-col min-h-screen bg-off-white text-charcoal max-w-md mx-auto w-full shadow-2xl relative overflow-x-hidden border-x border-white/50">
 
       {/* Elementos de UI visíveis durante o fluxo */}
       {step !== 'loading' && step !== 'generating' && step !== 'result' && (
