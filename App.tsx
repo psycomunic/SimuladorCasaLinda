@@ -99,11 +99,11 @@ const App: React.FC = () => {
   if (error) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-8 text-center bg-off-white">
-        <h2 className="font-serif text-4xl mb-4 text-charcoal">Atenção</h2>
-        <p className="text-charcoal/60 mb-8 max-w-xs font-sans">Não foi possível carregar os dados. Inicie a partir da página do produto.</p>
+        <h2 className="font-display text-4xl mb-4 font-bold text-zinc-950">Atenção</h2>
+        <p className="text-zinc-500 mb-8 max-w-xs font-sans">Não foi possível carregar os dados. Inicie a partir da página do produto.</p>
         <button
           onClick={() => window.location.reload()}
-          className="px-10 py-4 bg-charcoal text-white rounded-full font-bold tracking-widest text-[10px] uppercase transition-all hover:scale-105 active:scale-95"
+          className="px-10 py-4 bg-zinc-900 text-white rounded-pill font-bold tracking-wide text-xs uppercase transition-all hover:scale-105 active:scale-95 shadow-soft"
         >
           Recarregar
         </button>
@@ -114,7 +114,7 @@ const App: React.FC = () => {
   const stepIndex = ['loading', 'room', 'size', 'frame-category', 'frame', 'adjust', 'generating', 'result'].indexOf(step);
 
   return (
-    <div className="flex flex-col min-h-screen bg-off-white text-charcoal max-w-md mx-auto w-full shadow-2xl relative overflow-x-hidden border-x border-white/50">
+    <div className="flex flex-col min-h-screen bg-off-white text-zinc-950 max-w-md mx-auto w-full shadow-soft relative overflow-x-hidden border-x border-dashed border-border-light">
 
       {/* Elementos de UI visíveis durante o fluxo */}
       {step !== 'loading' && step !== 'generating' && step !== 'result' && (
@@ -176,20 +176,20 @@ const App: React.FC = () => {
       {step === 'adjust' && (
         <div className="flex-1 flex flex-col px-8 pt-10 fade-in pb-32">
           <div className="mb-10">
-            <h2 className="font-serif text-4xl mb-3 leading-tight">Refinamento</h2>
-            <p className="text-charcoal/40 text-sm font-medium tracking-wide italic">Ajuste o cenário para a máxima precisão.</p>
+            <h2 className="font-display text-4xl mb-3 font-bold tracking-tight">Refinamento</h2>
+            <p className="text-zinc-500 text-sm font-medium tracking-wide">Ajuste o cenário para a máxima precisão.</p>
           </div>
 
           <div className="space-y-12">
 
 
             <section>
-              <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-accent mb-5 block">
-                Toque onde quer o quadro
+              <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-5 block">
+                Posicionamento
               </label>
 
               <div
-                className="relative w-full aspect-[4/3] bg-gray-100 rounded-lg overflow-hidden shadow-inner cursor-crosshair touch-none"
+                className="relative w-full aspect-[4/3] bg-zinc-100 rounded-2xl overflow-hidden cursor-crosshair touch-none border border-border-light shadow-inner"
                 onClick={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   const x = (e.clientX - rect.left) / rect.width;
@@ -201,29 +201,26 @@ const App: React.FC = () => {
                   <img
                     src={config.roomImage}
                     alt="Sala"
-                    className="w-full h-full object-cover pointer-events-none"
+                    className="w-full h-full object-cover pointer-events-none opacity-90 grayscale-[20%]"
                   />
                 )}
 
                 {/* Marker */}
                 {config.manualPosition && (
                   <div
-                    className="absolute w-6 h-6 border-2 border-white bg-mustard/80 rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-lg animate-bounce"
+                    className="absolute w-6 h-6 border-[3px] border-white bg-accent-blue rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-lg animate-bounce"
                     style={{
                       left: `${config.manualPosition.x * 100}%`,
                       top: `${config.manualPosition.y * 100}%`
                     }}
                   >
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="w-1 h-1 bg-charcoal rounded-full"></div>
-                    </div>
                   </div>
                 )}
 
                 {/* Initial Hint if no position selected */}
                 {!config.manualPosition && (
-                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/10">
-                    <span className="bg-white/90 px-3 py-1 rounded-full text-[10px] font-bold text-charcoal shadow-sm">
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <span className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-full text-xs font-bold text-zinc-900 shadow-soft border border-white/50">
                       Toque na parede
                     </span>
                   </div>
@@ -232,13 +229,13 @@ const App: React.FC = () => {
             </section>
 
             <section>
-              <label className="text-[10px] font-bold uppercase tracking-[0.2em] text-gold-accent mb-5 block">Atmosfera de Luz</label>
+              <label className="text-xs font-bold uppercase tracking-widest text-zinc-400 mb-5 block">Iluminação</label>
               <div className="flex gap-3">
                 {['Clara', 'Média', 'Baixa'].map(l => (
                   <button
                     key={l}
                     onClick={() => setConfig({ ...config, lighting: l })}
-                    className={`px-8 py-3 rounded-full border text-[11px] font-bold uppercase tracking-wider transition-all duration-300 ${config.lighting === l ? 'bg-charcoal text-white border-charcoal shadow-xl' : 'bg-white border-border-soft text-charcoal/50'}`}
+                    className={`px-6 py-3 rounded-pill text-xs font-bold transition-all duration-300 ${config.lighting === l ? 'bg-zinc-900 text-white shadow-lg scale-105' : 'bg-white border border-border-light text-zinc-500 hover:bg-zinc-50'}`}
                   >
                     {l}
                   </button>
@@ -247,13 +244,13 @@ const App: React.FC = () => {
             </section>
           </div>
 
-          <div className="fixed bottom-0 left-0 right-0 p-8 glass border-t border-border-soft z-50">
+          <div className="fixed bottom-0 left-0 right-0 p-6 glass-clean z-50">
             <div className="max-w-md mx-auto">
               <button
                 onClick={startSimulation}
-                className="w-full py-5 bg-mustard text-charcoal rounded-2xl font-bold uppercase tracking-[0.2em] text-[12px] btn-luxury shadow-2xl shadow-mustard/30"
+                className="w-full py-5 bg-zinc-900 text-white rounded-pill font-bold tracking-widest text-xs uppercase btn-modern shadow-hover hover:bg-black"
               >
-                Simular Obra
+                Gerar Simulação
               </button>
             </div>
           </div>
@@ -263,14 +260,14 @@ const App: React.FC = () => {
       {step === 'generating' && (
         <div className="flex-1 flex flex-col items-center justify-center text-center p-12 space-y-8 bg-off-white">
           <div className="relative">
-            <div className="w-24 h-24 border-t-2 border-gold-accent rounded-full animate-spin"></div>
+            <div className="w-20 h-20 border-t-2 border-zinc-900 rounded-full animate-spin"></div>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="material-symbols-outlined text-gold-accent animate-pulse">auto_awesome</span>
+              <span className="material-symbols-outlined text-zinc-900 animate-pulse">auto_awesome</span>
             </div>
           </div>
           <div className="space-y-3">
-            <h3 className="font-serif text-3xl text-charcoal">Criando Simulação</h3>
-            <p className="text-charcoal/40 text-sm italic tracking-wide">Nano Banana está interpretando luzes e profundidade...</p>
+            <h3 className="font-display font-bold text-3xl text-zinc-900">Processando</h3>
+            <p className="text-zinc-500 text-sm tracking-wide">Analisando arquitetura e luz...</p>
           </div>
         </div>
       )}
