@@ -111,14 +111,19 @@ function calculateGeometry(cw: number, ch: number, config: SimulationConfig, ana
         config.size.includes('x' + width) ? 1.5 : 1.4);
 
     // --- SMART FIT: Boundary Constraints (Prevent Clipping) ---
-    // 1. Force Scale Down if larger than canvas
-    if (width > cw) {
-        const scaleFactor = (cw * 0.9) / width;
+    const padding = cw * 0.05; // 5% Safety Margin
+
+    // 1. Force Scale Down if larger than canvas (minus padding)
+    const maxWidth = cw - (padding * 2);
+    const maxHeight = ch - (padding * 2);
+
+    if (width > maxWidth) {
+        const scaleFactor = maxWidth / width;
         width *= scaleFactor;
         height *= scaleFactor;
     }
-    if (height > ch) {
-        const scaleFactor = (ch * 0.9) / height;
+    if (height > maxHeight) {
+        const scaleFactor = maxHeight / height;
         width *= scaleFactor;
         height *= scaleFactor;
     }
@@ -126,14 +131,14 @@ function calculateGeometry(cw: number, ch: number, config: SimulationConfig, ana
     let finalX = centerX - width / 2;
     let finalY = centerY - height / 2;
 
-    // 2. Clamp Positions (Push inside if touching edges)
+    // 2. Clamp Positions (Push inside with padding)
     // Left/Right
-    if (finalX < 0) finalX = 0;
-    if (finalX + width > cw) finalX = cw - width;
+    if (finalX < padding) finalX = padding;
+    if (finalX + width > cw - padding) finalX = cw - width - padding;
 
     // Top/Bottom
-    if (finalY < 0) finalY = 0;
-    if (finalY + height > ch) finalY = ch - height;
+    if (finalY < padding) finalY = padding;
+    if (finalY + height > ch - padding) finalY = ch - height - padding;
 
     return {
         x: finalX,
